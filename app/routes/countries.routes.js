@@ -1,17 +1,25 @@
 const router = require("express").Router();
 const {
-  getAllCities,
-  getAllCountries,
+  getAllCitiesWithPopulation,
+  getAllCountriesWithPopulation,
   getCountryWithPopulation,
+  getAllCountries,
+  syncCountries,
 } = require("../controllers/app.controller");
 
 // get all Countries
-router.get("/getAllCountries", getAllCountries);
+router.get("/getAllCountriesWithPopulation", getAllCountriesWithPopulation);
 
 // get all Cities
-router.get("/getAllCities", getAllCities);
+router.get("/getAllCitiesWithPopulation", getAllCitiesWithPopulation);
 
 // get Country with population
 router.post("/getCountryWithPopulation", getCountryWithPopulation);
+
+// get all countries with pagination
+router.get("/getAllCountries", getAllCountries);
+
+// sync countries
+router.post("/syncCountries", syncCountries);
 
 module.exports = router;

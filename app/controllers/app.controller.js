@@ -10,38 +10,8 @@ let cityPopulations = [];
 let getcountryboolean = false;
 let getcityboolean = false;
 
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-function newCountry() {
-  return {
-    country: null,
-    code: null,
-    iso3: null,
-  };
-}
-
-function newPopulation() {
-  return {
-    value: null,
-    year: null,
-    country: null,
-    city: null,
-  };
-}
-
-function newCity() {
-  return {
-    city: null,
-    country: null,
-  };
-}
-
 //get all countries and their population and throw them to database
-const getAllCountries = async (req, res) => {
+const getAllCountriesWithPopulation = async (req, res) => {
   if (getcountryboolean == true) {
     return res.status(400).json({
       message: "Already added to database",
@@ -104,7 +74,7 @@ const getAllCountries = async (req, res) => {
 };
 
 // get all cities and add them to database
-const getAllCities = async (req, res) => {
+const getAllCitiesWithPopulation = async (req, res) => {
   if (getcityboolean == true) {
     return res.status(400).json({
       message: "Already added to database",
@@ -193,6 +163,8 @@ const getCountryWithPopulation = async (req, res) => {
           success: false,
         });
       }
+
+      // modify response to make it like documenter
       let populationArray = [];
       result.forEach((element) => {
         let populationObject = {
@@ -218,8 +190,106 @@ const getCountryWithPopulation = async (req, res) => {
   );
 };
 
+// Sync countries
+const syncCountries = async (req, res) => {
+  let countryName = req.body.country;
+  connection.query(
+    `SELECT DISTINCT country from countries WHERE country = ` +
+      countryName +
+      ` `,
+    (err, result) => {
+      if (err) {
+        res.status(200).json({
+          message: "Error",
+          error: err,
+          success: false,
+        });
+      }
+      if (result != countryName) {
+        connection.query(
+          `INSERT INTO countries (country,code,iso3) VALUES (` +
+            countryName +
+            `,` +
+            req.body.code +
+            `,` +
+            req.body.iso3 +
+            `)`,
+          (err, result) => {
+            if (err) {
+              res.status(200).json({
+                message: "Error",
+                error: err,
+                success: false,
+              });
+            }
+            res.status(200).send({
+              error: false,
+              msg: "ok",
+              data: result,
+            });
+          }
+        );
+      }
+      let allPopulations = req.body.populationCounts;
+      let countriesPopulation = [];
+      allPopulations.forEach((population) => {
+        let populationarray = [];
+        populationarray.push(
+          population.value,
+          population.year,
+          element.country
+        );
+        countriesPopulation.push(populationarray);
+      });
+
+      var populationsql =
+        "INSERT INTO population_counts (value, year, country) VALUES ?";
+
+      connection.query(
+        populationsql,
+        [countriesPopulation],
+        function (err, result) {
+          if (err) throw err;
+          console.log("Number of records inserted: " + result.affectedRows);
+        }
+      );
+    }
+  );
+};
+
+// Get all countries with pagination
+const getAllCountries = async (req, res) => {
+  const page = req.body.page || 1;
+  if (page < 1) {
+    return res.status(400).json({
+      message: "Page number should be greater than 0",
+      success: false,
+    });
+  }
+  const offset = (page - 1) * 50;
+  connection.query(
+    "SELECT * FROM countries LIMIT " + offset + ", 50",
+    (err, result) => {
+      if (err) {
+        res.status(200).json({
+          message: "Error",
+          error: err,
+          success: false,
+        });
+      }
+
+      res.status(200).send({
+        error: false,
+        data: result,
+      });
+    }
+  );
+};
+
 module.exports = {
-  getAllCountries,
-  getAllCities,
+  getAllCountriesWithPopulation,
+  getAllCitiesWithPopulation,
   getCountryWithPopulation,
+  getAllCountries,
+  syncCountries,
 };
