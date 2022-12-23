@@ -7,6 +7,8 @@ let countries = [];
 let countryPopulations = [];
 let cities = [];
 let cityPopulations = [];
+let getcountryboolean = false;
+let getcityboolean = false;
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -40,6 +42,12 @@ function newCity() {
 
 //get all countries and their population and throw them to database
 const getAllCountries = async (req, res) => {
+  if (getcountryboolean == true) {
+    return res.status(400).json({
+      message: "Already added to database",
+      success: false,
+    });
+  }
   request(
     "https://countriesnow.space/api/v0.1/countries/population",
     { json: true },
@@ -85,6 +93,7 @@ const getAllCountries = async (req, res) => {
           console.log("Number of records inserted: " + result.affectedRows);
         }
       );
+      getcountryboolean = true;
       res.status(200).send({
         error: false,
         msg: "all countries and population 1961 - 2018",
@@ -96,6 +105,12 @@ const getAllCountries = async (req, res) => {
 
 // get all cities and add them to database
 const getAllCities = async (req, res) => {
+  if (getcityboolean == true) {
+    return res.status(400).json({
+      message: "Already added to database",
+      success: false,
+    });
+  }
   request(
     "https://countriesnow.space/api/v0.1/countries/population/cities",
     { json: true },
@@ -148,7 +163,7 @@ const getAllCities = async (req, res) => {
           console.log("Number of records inserted: " + result.affectedRows);
         }
       );
-
+      getcityboolean = true;
       res.status(200).send({
         error: false,
         msg: "all cities with population",
@@ -158,7 +173,53 @@ const getAllCities = async (req, res) => {
   );
 };
 
+// get specific country with population
+const getCountryWithPopulation = async (req, res) => {
+  const country = req.body.country;
+  connection.query(
+    `SELECT c.country , c.code, c.iso3, p.year, p.value
+    from countries c 
+    LEFT JOIN population_counts p
+          ON c.country = p.country
+    WHERE c.country = 
+        '` +
+      country +
+      `' AND p.sex IS NULL`,
+    (err, result) => {
+      if (err) {
+        res.status(200).json({
+          message: "Error",
+          error: err,
+          success: false,
+        });
+      }
+      let populationArray = [];
+      result.forEach((element) => {
+        let populationObject = {
+          year: null,
+          value: null,
+        };
+        populationObject.year = element.year;
+        populationObject.value = element.value;
+        populationArray.push(populationObject);
+      });
+      let finalObject = {
+        country: result[0].country,
+        code: result[0].code,
+        iso3: result[0].iso3,
+        populationCounts: populationArray,
+      };
+      res.status(200).send({
+        error: false,
+        msg: country + " with population",
+        data: finalObject,
+      });
+    }
+  );
+};
+
 module.exports = {
   getAllCountries,
   getAllCities,
+  getCountryWithPopulation,
 };
