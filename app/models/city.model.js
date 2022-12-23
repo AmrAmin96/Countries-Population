@@ -4,8 +4,7 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.STRING,
     },
     country: {
-      type: Sequelize.STRING,
-      foreign_key: true,
+      type: Sequelize.INTEGER,
     },
   });
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const countries = require("./app/controllers/countries.controller");
+const countries = require("./app/controllers/app.controller");
 
 // Server routes
 const countriesRoutes = require("./app/routes/countries.routes");
